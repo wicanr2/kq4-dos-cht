@@ -31,3 +31,6 @@ __pycache__/
 
 # build 工作目錄（正本在 dist-cht/）
 dist/
+
+# 打包工具二進位快取
+tools/.cache/
