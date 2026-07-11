@@ -9,8 +9,17 @@ repo：`github.com/wicanr2/kq4-dos-cht`（patch-only）。工作目錄 `~/scummv
 | **M0 環境盤點 + 可行性** | ✅ SCI0 EGA、`sci:kq4sci`、139 text/155 script、翻譯量 2121 則、qfg-1/qfg2 patch 可零改複用（2026-07-12） |
 | **M1 端到端打通** | ✅ 引擎 patch 零修改複用；防拷框實機顯中文（hi-res 銳利）、kFormat 模板 hook 正常；驗證 **BOBALU 萬用通關碼**可過防拷（2026-07-12） |
 | **M2 全文字翻譯** | ✅ 16 批 fan-out sonnet 全譯，worklist **100%(2144/2144)**、覆蓋 99%，逐批 validate+收斂，字型烘 2023 字；**開場敘述實機驗證中文 hi-res 銳利**（亞歷山大/羅塞拉/卡拉漢國王）（2026-07-12） |
-| **M3 baked-art 重繪 + 中文標題疊圖** | 🔄 進行中 |
-| M4 打包 + Release（AppImage/Windows/macOS）+ README + 手冊 markdown | ⏳ 待做 |
+| **M4 交付** | 🔄 引擎 patch 重生（含 %s hook，dry-run 過）、dist-cht 中文資料、README 圖文並茂、手冊 markdown、BUILD.md、本機 git commit（未 push）、Linux AppImage 打包中 |
+| M3 baked-art 中文標題疊圖 | ⏸️ 後補（SCI 無 .ovl 支援，需 baked-art 重繪 title pic；英文 logo 為經典可暫留，核心文字已全中文含 credits） |
+
+## M4 交付內容（2026-07-12）
+
+- **引擎 patch**：`tools/regen_patch.sh` 從 pinned upstream 逐檔 diff 重生 `0001-sci-cht-zh_twn.patch`（11 檔，含新增 %s hook），`patch -p1 --dry-run` 驗證可乾淨套用。`apply_patches.sh` 一鍵套用。
+- **中文資料**：`dist-cht/`（translation.tsv + qfg1_big5.fnt + qfg1_big5_hi.fnt）。
+- **文件**：README（圖文並茂 + 引言 + 手冊要點索引 + 安裝）、`docs/manual-cht.md`（故事轉寫 + 操作 + 守則）、BUILD.md（三平台 + MT-32 config.h 雷）。
+- **repo**：`git init` + 本機 commit（47 檔，無遊戲資源/ROM/大檔漏網）。**git push 待使用者確認**（代理邊界）。
+- **打包**：Linux AppImage（`dist-all/`，gitignore）。Windows/macOS 待後續。
+- **狀態列**：還原乾淨英文（font.0 無法顯 Big5），最終建置實機驗證通過。
 
 ## M2 完成內容（2026-07-12）
 
