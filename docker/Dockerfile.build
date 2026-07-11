@@ -1,0 +1,9 @@
+# ScummVM SCI-only build 環境(繁中化引擎驗證用)
+FROM debian:12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential g++ make pkg-config git \
+    libsdl2-dev zlib1g-dev libpng-dev libjpeg62-turbo-dev \
+    libfreetype6-dev libmpeg2-4-dev libvorbis-dev libflac-dev \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
