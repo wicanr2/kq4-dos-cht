@@ -30,14 +30,15 @@ namespace Sci {
 
 // Big5 font data file shipped alongside the game (part of the CHT patch).
 static const char *kChineseFontFile = "qfg1_big5.fnt";
-// Rendered glyph box: Big5Font glyphs are 16px wide (kChineseTraditionalWidth).
-static const int kBig5Width = 16;
+// Layout advance per Chinese char (logical 320x200 px). Reduced from the Big5Font native
+// 16px so dialogue fits KQ4's compact portrait/message boxes without overflowing (issue #1).
+static const int kBig5Width = 14;
 
 // Hi-res Big5 font (own format, bake_hires_font.py): 32px-wide, kHiH-row glyphs drawn
 // straight onto the 640x400 display buffer for sharp strokes under ZH_TWN upscaling.
 static const char *kChineseHiResFontFile = "qfg1_big5_hi.fnt";
-static const int kHiW = 32;
-static const int kHiH = 28;
+static const int kHiW = 24;   // 2x the 12px logical glyph; drawn centered in the 14px cell
+static const int kHiH = 22;
 
 GfxFontChinese::GfxFontChinese(ResourceManager *resMan, GfxScreen *screen, GuiResourceId resourceId)
 	: _screen(screen), _resourceId(resourceId), _big5(nullptr), _big5Height(14) {
@@ -52,6 +53,11 @@ GfxFontChinese::GfxFontChinese(ResourceManager *resMan, GfxScreen *screen, GuiRe
 	} else {
 		warning("GfxFontChinese: could not open '%s'; Chinese glyphs will be blank", kChineseFontFile);
 	}
+	// Line-height metric for layout (getHeight). Capped below the native glyph height so lines
+	// pack tighter and boxes hold more text (issue #1: 對話後面被截斷). The hi-res glyph (kHiH)
+	// is the actual drawn height; low-res is only a rare fallback under ZH_TWN (always upscaled).
+	if (_big5Height > 13)
+		_big5Height = 13;
 
 	_hiW = kHiW;
 	_hiH = kHiH;
@@ -167,7 +173,8 @@ void GfxFontChinese::drawHiRes(uint16 point, int16 top, int16 left, byte color) 
 		return;
 	const byte *bmp = &_hiData[it->_value];
 	const int rowBytes = _hiW / 8;
-	const int dispLeft = left * 2;
+	// Centre the (possibly narrower) hi-res glyph within the 2x logical advance cell.
+	const int dispLeft = left * 2 + (2 * kBig5Width - _hiW) / 2;
 	const int dispTop = top * 2;
 	const int dispW = _screen->getDisplayWidth();
 	const int dispH = _screen->getDisplayHeight();

@@ -149,7 +149,18 @@
  #include "sci/sci.h"
  #include "sci/engine/features.h"
  #include "sci/engine/state.h"
-@@ -88,6 +90,8 @@
+@@ -47,7 +49,9 @@
+ 	: _resMan(resMan), _segMan(segMan), _cache(cache), _ports(ports),
+ 	  _coordAdjuster(coordAdjuster), _screen(screen), _palette(palette),
+ 	  _transitions(transitions), _audio(audio), _EGAdrawingVisualize(false),
+-	  _hiresDrawObjs(nullptr), _hiresPortraitWorkaroundFlag(false) {
++	  _hiresDrawObjs(nullptr), _hiresPortraitWorkaroundFlag(false),
++	  _chtTitleActive(false), _chtTitleLoaded(false),
++	  _chtTitleW(0), _chtTitleH(0), _chtTitleX(0), _chtTitleY(0) {
+ 
+ 	// _animate and _text16 will be initialized later on
+ 	_animate = nullptr;
+@@ -88,6 +92,8 @@
  }
  
  void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool addToFlag, GuiResourceId paletteId) {
@@ -158,38 +169,19 @@
  	// Set up custom per-picture palette mod
  	doCustomPicPalette(_screen, pictureId);
  
-@@ -106,6 +110,55 @@
+@@ -106,6 +112,71 @@
  
  	// Reset custom per-picture palette mod
  	_screen->setCurPaletteMapValue(0);
 +
-+	// CHT: overlay a Traditional Chinese subtitle onto the KQ4 title screen (pic 96).
-+	// The "King's Quest IV" logo is vector pic art (not a bitmap we can edit), so we blit
-+	// an indexed EGA overlay bitmap straight onto the hi-res 640x400 display buffer -- same
-+	// mechanism GfxFontChinese uses for hi-res glyphs. This adds a Chinese title without
-+	// touching the iconic original logo. Overlay file kq4_title.ovl in the game path:
-+	//   LE u16 width, height, x, y (display 640x400 coords), then width*height bytes of
-+	//   EGA palette indices (0-15); 0xFF = transparent (skip).
-+	if (pictureId == 96 && g_sci->getLanguage() == Common::ZH_TWN) {
-+		Common::File ovl;
-+		if (ovl.open("kq4_title.ovl")) {
-+			uint16 ow = ovl.readUint16LE();
-+			uint16 oh = ovl.readUint16LE();
-+			uint16 ox = ovl.readUint16LE();
-+			uint16 oy = ovl.readUint16LE();
-+			const int dw = _screen->getDisplayWidth();
-+			const int dh = _screen->getDisplayHeight();
-+			for (uint16 yy = 0; yy < oh && !ovl.eos(); yy++) {
-+				for (uint16 xx = 0; xx < ow; xx++) {
-+					byte idx = ovl.readByte();
-+					int px = ox + xx, py = oy + yy;
-+					if (idx != 0xFF && px >= 0 && py >= 0 && px < dw && py < dh)
-+						_screen->putPixelOnDisplay(px, py, idx);
-+				}
-+			}
-+			ovl.close();
-+		}
-+	}
++	// CHT: overlay a Traditional Chinese subtitle onto the KQ4 title screen (pic 96, drawn last).
++	// The "King's Quest IV" logo is vector pic art (not a bitmap we can edit), so we blit an
++	// indexed EGA overlay onto the visual plane (see drawChtTitleOverlay). The title's sparkle
++	// cels animate on top every frame, so we keep _chtTitleActive and re-assert the overlay in
++	// drawCelAndShow. Active only while pic 96 is the current picture.
++	_chtTitleActive = (pictureId == 96 && g_sci->getLanguage() == Common::ZH_TWN);
++	if (_chtTitleActive)
++		drawChtTitleOverlay();
 +
 +	// CHT tooling: dump each drawn pic (display buffer + palette) as PPM, to identify
 +	// which resource holds baked-art UI labels. Triggered by SCI_DUMP_PIC=<dir>.
@@ -211,9 +203,92 @@
 +			out.close();
 +		}
 +	}
++}
++
++// CHT: blit the cached Traditional Chinese title subtitle (kq4_title.ovl) onto the visual
++// plane. Loaded once (indexed EGA bitmap: LE u16 w,h,x,y in logical 320x200 coords, then
++// w*h bytes of EGA index; 0xFF = transparent). putPixel writes the visual plane (persists
++// across re-upscale) and 2x-upscales to the display; low-res matches the blocky EGA art.
++void GfxPaint16::drawChtTitleOverlay() {
++	if (!_chtTitleLoaded) {
++		_chtTitleLoaded = true; // one attempt; on failure stay empty and no-op
++		Common::File ovl;
++		if (ovl.open("kq4_title.ovl")) {
++			_chtTitleW = ovl.readUint16LE();
++			_chtTitleH = ovl.readUint16LE();
++			_chtTitleX = ovl.readUint16LE();
++			_chtTitleY = ovl.readUint16LE();
++			uint32 n = (uint32)_chtTitleW * _chtTitleH;
++			_chtTitleData.resize(n);
++			for (uint32 i = 0; i < n && !ovl.eos(); i++)
++				_chtTitleData[i] = ovl.readByte();
++			ovl.close();
++		}
++	}
++	if (_chtTitleData.empty())
++		return;
++	const int sw = _screen->getWidth();
++	const int sh = _screen->getHeight();
++	uint32 i = 0;
++	for (uint16 yy = 0; yy < _chtTitleH; yy++) {
++		for (uint16 xx = 0; xx < _chtTitleW; xx++, i++) {
++			byte idx = _chtTitleData[i];
++			int px = _chtTitleX + xx, py = _chtTitleY + yy;
++			if (idx != 0xFF && px >= 0 && py >= 0 && px < sw && py < sh)
++				_screen->putPixel(px, py, GFX_SCREEN_MASK_VISUAL, idx, 0, 0);
++		}
++	}
  }
  
  // This one is the only one that updates screen!
+@@ -121,6 +192,11 @@
+ 
+ 		drawCel(view, loopNo, celNo, celRect, priority, paletteNo, scaleX, scaleY, scaleSignal);
+ 
++		// CHT: a title-screen sparkle cel just drew over the visual plane; re-assert the
++		// Chinese subtitle before bitsShow so the animation doesn't cover it (issue #1.3).
++		if (_chtTitleActive)
++			drawChtTitleOverlay();
++
+ 		if (getSciVersion() >= SCI_VERSION_1_1) {
+ 			if (!_screen->_picNotValidSci11) {
+ 				bitsShow(celRect);
+--- a/engines/sci/graphics/paint16.h
++++ b/engines/sci/graphics/paint16.h
+@@ -109,6 +109,15 @@
+ 
+ 	HiresDrawData *_hiresDrawObjs;
+ 	bool _hiresPortraitWorkaroundFlag;
++
++	// CHT: Traditional Chinese title-screen subtitle overlay (kq4_title.ovl), blitted to the
++	// visual plane. Cached and re-asserted over the title's animated sparkle cels each frame
++	// (drawCelAndShow) so they don't cover it. Active only while the title pic (96) is shown.
++	void drawChtTitleOverlay();
++	bool _chtTitleActive;
++	bool _chtTitleLoaded;
++	uint16 _chtTitleW, _chtTitleH, _chtTitleX, _chtTitleY;
++	Common::Array<byte> _chtTitleData;
+ };
+ 
+ } // End of namespace Sci
+--- a/engines/sci/graphics/ports.cpp
++++ b/engines/sci/graphics/ports.cpp
+@@ -62,9 +62,12 @@
+ 	setPort(_menuPort);
+ 	_text16->SetFont(0);
+ 	_menuPort->rect = Common::Rect(0, 0, _screen->getScriptWidth(), _screen->getScriptHeight());
+-	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), 9);
+-	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), 10);
+-	_menuLine = Common::Rect(0, 9, _screen->getScriptWidth(), 10);
++	// CHT: Traditional Chinese menu titles are ~13-14px tall vs the stock 9px SCI menu bar,
++	// so the bottom of the glyphs gets clipped / leaves residue. Heighten the bar for ZH_TWN.
++	const int16 menuBarH = (g_sci->getLanguage() == Common::ZH_TWN) ? 15 : 9;
++	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH);
++	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH + 1);
++	_menuLine = Common::Rect(0, menuBarH, _screen->getScriptWidth(), menuBarH + 1);
+ 
+ 	_wmgrPort = new Port(1);
+ 	_windowsById.resize(2);
 --- a/engines/sci/graphics/screen.cpp
 +++ b/engines/sci/graphics/screen.cpp
 @@ -84,6 +84,14 @@
@@ -274,7 +349,24 @@
  		} else {
  			// Add a character to the count for games whose interpreter would count the
  			//  character that exceeded the width if a space hadn't been reached yet.
-@@ -442,6 +457,14 @@
+@@ -432,6 +447,16 @@
+ }
+ 
+ void GfxText16::StringWidth(const Common::String &str, GuiResourceId orgFontId, int16 &textWidth, int16 &textHeight) {
++	// CHT: measure the translated string so menu/UI widths match what DrawString actually
++	// draws (e.g. the Chinese menu bar items). Without this the box is sized for the English
++	// text and the Chinese overflows or is clipped.
++	if (g_sci->getLanguage() == Common::ZH_TWN) {
++		const char *tr = g_sci->getChtTranslation(str.c_str());
++		if (tr) {
++			Width(tr, 0, strlen(tr), orgFontId, textWidth, textHeight, true);
++			return;
++		}
++	}
+ 	Width(str.c_str(), 0, str.size(), orgFontId, textWidth, textHeight, true);
+ }
+ 
+@@ -442,6 +467,14 @@
  #endif
  
  void GfxText16::DrawString(const Common::String &str, GuiResourceId orgFontId, int16 orgPenColor) {
@@ -289,7 +381,7 @@
  	Draw(str.c_str(), 0, str.size(), orgFontId, orgPenColor);
  }
  
-@@ -569,6 +592,15 @@
+@@ -569,6 +602,15 @@
  	int16 textWidth, maxTextWidth, textHeight;
  	int16 offset = 0;
  	int16 hline = 0;
@@ -305,7 +397,7 @@
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	bool doubleByteMode = false;
-@@ -683,10 +715,18 @@
+@@ -683,10 +725,18 @@
  	_ports->penColor(previousPenColor);
  }
  
@@ -325,7 +417,7 @@
  	Common::String text;
  	if (!g_sci->isLanguageRTL())
  		text = textOrig;
-@@ -700,11 +740,19 @@
+@@ -700,11 +750,19 @@
  
  // we need to have a separate status drawing code
  //  In KQ4 the IV char is actually 0xA, which would otherwise get considered as linebreak and not printed

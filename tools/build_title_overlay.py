@@ -27,10 +27,10 @@ def main():
     ap.add_argument("--text",default="羅塞拉的冒險")
     ap.add_argument("--font",default="/usr/share/fonts/truetype/arphic/uming.ttc")
     ap.add_argument("--face",type=int,default=2)
-    ap.add_argument("--size",type=int,default=44)
-    ap.add_argument("--disp-w",type=int,default=640)
-    ap.add_argument("--disp-h",type=int,default=400)
-    ap.add_argument("--y",type=int,default=316)   # 底部（IV 盾下方）
+    ap.add_argument("--size",type=int,default=19)     # 邏輯 320x200 尺度（引擎寫 visual plane 後 2x upscale）
+    ap.add_argument("--disp-w",type=int,default=320)
+    ap.add_argument("--disp-h",type=int,default=200)
+    ap.add_argument("--y",type=int,default=150)   # 底部（IV 盾下方）
     a=ap.parse_args()
 
     font=ImageFont.truetype(a.font,a.size,index=a.face)

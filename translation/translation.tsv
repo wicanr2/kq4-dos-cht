@@ -1933,9 +1933,9 @@ Volume can not be changed at this time.	目前無法調整音量。
 Turn Off	關閉
 Turn On	開啟
 Roberta says:	Roberta 說：
-  Restore  	恢復
-  Restart  	重新開始
-   Quit   	離開
+  Restore  	載入進度
+  Restart  	 重新開始
+   Quit   	   離開
 TP to:	傳送至：
 Magic Hen	魔法母雞
 Silver Flute	銀笛
@@ -2072,19 +2072,19 @@ Inv. Object	庫存物件
 Owner	擁有者
 Variable No.	變數編號
 Value	數值
-Normal	普通
+Normal	正常
 Cancel	取消
 Gauge	量表
 Extra	擴展
-Sound	音效
-  Save  	  儲存
+Sound	 音效
+  Save  	儲存進度
 Replace	替換
 Select the game that you would like to restore.	選擇你想要讀取的遊戲。
 Type the description of this saved game.	輸入這個存檔遊戲的描述。
 This directory/disk can hold no more saved games. You must replace one of your saved games or use Change Directory to save on a different directory/disk.	這個目錄/磁碟已無法儲存更多遊戲。你必須替換其中一個存檔遊戲，或使用「改變目錄」在不同的目錄/磁碟上儲存。
 Restore a Game	讀取遊戲
 Save a Game	儲存遊戲
-Save	  儲存
+Save	儲存進度
  Cancel 	取消
 with:	使用:
 Cycle	循環
@@ -2101,11 +2101,11 @@ You are carrying nothing!	你什麼也沒帶！
 Enter input	輸入資料
  Action 	 動作
  Speed 	 速度 
- Sound 	音效
+ Sound 	 音效
 A Ken Williams Production	肯·威廉斯 出品
- Restart 	重新開始
+ Restart 	 重新開始
 Continue	繼續
-    Quit    	離開
+    Quit    	   離開
  Continue 	繼續
 Use the mouse or the left and right arrow keys to change the speed of moving characters.	使用滑鼠或左右方向鍵可調整角色移動的速度。
 Animation Speed	動畫速度
@@ -2142,3 +2142,15 @@ In the section TIPS FOR NEW ADVENTURE PLAYERS, what is the sixth word in the fir
 In the section TIPS FOR NEW ADVENTURE PLAYERS, what is the third word in the second paragraph of tip #8 (AT THE END OF YOUR ROPE)?	「新手冒險者提示」第 8 則中，第二段的第三個字是什麼？
 In the section TIPS FOR NEW ADVENTURE PLAYERS, what is the last word in the first paragraph of tip #8 (AT THE END OF YOUR ROPE)?	「新手冒險者提示」第 8 則中，第一段的最後一個字是什麼？
 In the section TIPS FOR NEW ADVENTURE PLAYERS, what is the eighth word in the first paragraph of tip #2 (STAY OUT OF DANGER)?	「新手冒險者提示」第 2 則中，第一段的第八個字是什麼？
+ File 	 檔案
+About KQ4	關於 KQ4
+Help	遊戲說明
+Restore	載入進度
+Restart	 重新開始
+Quit	   離開
+Pause	暫停
+Inventory	物品欄
+Retype	重新輸入
+Speed	 速度 
+Slow	慢
+Fast	快

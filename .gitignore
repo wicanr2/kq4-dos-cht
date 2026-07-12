@@ -36,3 +36,4 @@ dist/
 tools/.cache/
 out/picdump/
 out/*.ppm
+out/issues/
