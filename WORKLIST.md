@@ -10,7 +10,21 @@ repo：`github.com/wicanr2/kq4-dos-cht`（patch-only）。工作目錄 `~/scummv
 | **M1 端到端打通** | ✅ 引擎 patch 零修改複用；防拷框實機顯中文（hi-res 銳利）、kFormat 模板 hook 正常；驗證 **BOBALU 萬用通關碼**可過防拷（2026-07-12） |
 | **M2 全文字翻譯** | ✅ 16 批 fan-out sonnet 全譯，worklist **100%(2144/2144)**、覆蓋 99%，逐批 validate+收斂，字型烘 2023 字；**開場敘述實機驗證中文 hi-res 銳利**（亞歷山大/羅塞拉/卡拉漢國王）（2026-07-12） |
 | **M3 中文標題疊圖** | ✅ 引擎新增 SCI `.ovl` 疊圖 hook（drawPicture pic96 時 blit 中文副標到 640×400 display buffer）；`build_title_overlay.py` 烘「羅塞拉的冒險」金字黑底板 → `kq4_title.ovl`；實機驗證標題顯中文副標（2026-07-12）。Yes/No 按鈕為 baked-art view 仍英文（次要，另記）。 |
-| **M4 交付** | ✅ patch 重生（含 %s + 疊圖 hook）、dist-cht 中文資料、README/手冊/BUILD、**push 到 kq4-dos-cht**、Linux AppImage + Windows zip 打包驗證、macOS CI workflow |
+| **M4 交付** | ✅ 全部完成：patch（含 %s + 疊圖 hook）、dist-cht 中文資料、README/手冊/BUILD、**push 到 kq4-dos-cht**、**三平台包**（Linux AppImage / Windows zip / macOS universal dmg+tar.gz，皆含中文標題 + MT-32），macOS CI 首跑成功 |
+
+## 三平台包（dist-all/，gitignore，本機）
+
+| 平台 | 檔案 | 大小 | 驗證 |
+|---|---|---|---|
+| Linux | `KQ4-CHT-full-x86_64.AppImage` | 15MB | 實跑顯中文敘述 + 標題 + MT-32 |
+| Windows | `KQ4-CHT-win64.zip` | 14MB | exe 含疊圖 hook + ovl + DLL + ROM + .bat |
+| macOS | `macos/KQ4-CHT-macos-universal.{dmg,tar.gz}` | 34.5MB | GitHub Actions macos-14 CI 首跑成功（自編 SDL2 universal + mt32emu） |
+
+## 次要後補（非核心）
+
+- **Yes/No 等 baked-art 按鈕 view 仍英文**：這些是 view cel 內烘死的英文字，要 sci0_view.py 解碼重繪成 是/否。低優先，另議。
+- **防拷逐題真答案**：BOBALU 兜底中；可用手冊 PDF 精確導出（下週）。
+- **狀態列分數列**：font.0 限制保留英文。
 
 ## M4 交付內容（2026-07-12）
 
