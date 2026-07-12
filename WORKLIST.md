@@ -9,8 +9,8 @@ repo：`github.com/wicanr2/kq4-dos-cht`（patch-only）。工作目錄 `~/scummv
 | **M0 環境盤點 + 可行性** | ✅ SCI0 EGA、`sci:kq4sci`、139 text/155 script、翻譯量 2121 則、qfg-1/qfg2 patch 可零改複用（2026-07-12） |
 | **M1 端到端打通** | ✅ 引擎 patch 零修改複用；防拷框實機顯中文（hi-res 銳利）、kFormat 模板 hook 正常；驗證 **BOBALU 萬用通關碼**可過防拷（2026-07-12） |
 | **M2 全文字翻譯** | ✅ 16 批 fan-out sonnet 全譯，worklist **100%(2144/2144)**、覆蓋 99%，逐批 validate+收斂，字型烘 2023 字；**開場敘述實機驗證中文 hi-res 銳利**（亞歷山大/羅塞拉/卡拉漢國王）（2026-07-12） |
-| **M4 交付** | 🔄 引擎 patch 重生（含 %s hook，dry-run 過）、dist-cht 中文資料、README 圖文並茂、手冊 markdown、BUILD.md、本機 git commit（未 push）、Linux AppImage 打包中 |
-| M3 baked-art 中文標題疊圖 | ⏸️ 後補（SCI 無 .ovl 支援，需 baked-art 重繪 title pic；英文 logo 為經典可暫留，核心文字已全中文含 credits） |
+| **M3 中文標題疊圖** | ✅ 引擎新增 SCI `.ovl` 疊圖 hook（drawPicture pic96 時 blit 中文副標到 640×400 display buffer）；`build_title_overlay.py` 烘「羅塞拉的冒險」金字黑底板 → `kq4_title.ovl`；實機驗證標題顯中文副標（2026-07-12）。Yes/No 按鈕為 baked-art view 仍英文（次要，另記）。 |
+| **M4 交付** | ✅ patch 重生（含 %s + 疊圖 hook）、dist-cht 中文資料、README/手冊/BUILD、**push 到 kq4-dos-cht**、Linux AppImage + Windows zip 打包驗證、macOS CI workflow |
 
 ## M4 交付內容（2026-07-12）
 

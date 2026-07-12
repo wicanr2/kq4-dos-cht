@@ -34,3 +34,5 @@ dist/
 
 # 打包工具二進位快取
 tools/.cache/
+out/picdump/
+out/*.ppm

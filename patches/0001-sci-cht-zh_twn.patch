@@ -158,10 +158,38 @@
  	// Set up custom per-picture palette mod
  	doCustomPicPalette(_screen, pictureId);
  
-@@ -106,6 +110,27 @@
+@@ -106,6 +110,55 @@
  
  	// Reset custom per-picture palette mod
  	_screen->setCurPaletteMapValue(0);
++
++	// CHT: overlay a Traditional Chinese subtitle onto the KQ4 title screen (pic 96).
++	// The "King's Quest IV" logo is vector pic art (not a bitmap we can edit), so we blit
++	// an indexed EGA overlay bitmap straight onto the hi-res 640x400 display buffer -- same
++	// mechanism GfxFontChinese uses for hi-res glyphs. This adds a Chinese title without
++	// touching the iconic original logo. Overlay file kq4_title.ovl in the game path:
++	//   LE u16 width, height, x, y (display 640x400 coords), then width*height bytes of
++	//   EGA palette indices (0-15); 0xFF = transparent (skip).
++	if (pictureId == 96 && g_sci->getLanguage() == Common::ZH_TWN) {
++		Common::File ovl;
++		if (ovl.open("kq4_title.ovl")) {
++			uint16 ow = ovl.readUint16LE();
++			uint16 oh = ovl.readUint16LE();
++			uint16 ox = ovl.readUint16LE();
++			uint16 oy = ovl.readUint16LE();
++			const int dw = _screen->getDisplayWidth();
++			const int dh = _screen->getDisplayHeight();
++			for (uint16 yy = 0; yy < oh && !ovl.eos(); yy++) {
++				for (uint16 xx = 0; xx < ow; xx++) {
++					byte idx = ovl.readByte();
++					int px = ox + xx, py = oy + yy;
++					if (idx != 0xFF && px >= 0 && py >= 0 && px < dw && py < dh)
++						_screen->putPixelOnDisplay(px, py, idx);
++				}
++			}
++			ovl.close();
++		}
++	}
 +
 +	// CHT tooling: dump each drawn pic (display buffer + palette) as PPM, to identify
 +	// which resource holds baked-art UI labels. Triggered by SCI_DUMP_PIC=<dir>.
