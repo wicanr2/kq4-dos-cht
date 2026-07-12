@@ -32,6 +32,7 @@ rm -rf "$CHT_DIR"; mkdir -p "$CHT_DIR"
 [ -f "$ROOT/dist-cht/translation.tsv" ] || { echo "!! 找不到 $ROOT/dist-cht/translation.tsv" >&2; exit 1; }
 cp "$ROOT/dist-cht/translation.tsv" "$CHT_DIR/"
 cp "$ROOT"/dist-cht/*.fnt "$CHT_DIR/"
+[ -f "$ROOT/dist-cht/kq4_title.ovl" ] && cp "$ROOT/dist-cht/kq4_title.ovl" "$CHT_DIR/"   # 中文標題疊圖
 echo ">>    staged $(ls "$CHT_DIR" | wc -l) 個中文資料檔 → $CHT_DIR"
 
 README="$APP/Contents/Resources/README-cht.txt"
@@ -41,7 +42,7 @@ cat > "$README" <<'EOF'
 本包內容
 --------
 - patched ScummVM 執行檔（含 Big5 繪字、ZH_TWN 語言支援、hi-res 640x400 對白文字的引擎改動）
-- cht-data/：中文資料（translation.tsv 對白/訊息、qfg1_big5.fnt 低解析字型、qfg1_big5_hi.fnt hi-res 字型）
+- cht-data/：中文資料（translation.tsv 對白/訊息、qfg1_big5.fnt 低解析字型、qfg1_big5_hi.fnt hi-res 字型、kq4_title.ovl 中文標題疊圖）
 - 本說明檔
 
 本包【不含】原遊戲資源，也不含 Roland MT-32 ROM（版權因素不隨包分發）。
