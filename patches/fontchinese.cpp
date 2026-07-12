@@ -32,13 +32,27 @@ namespace Sci {
 static const char *kChineseFontFile = "qfg1_big5.fnt";
 // Layout advance per Chinese char (logical 320x200 px). Reduced from the Big5Font native
 // 16px so dialogue fits KQ4's compact portrait/message boxes without overflowing (issue #1).
+// Low-res advance (menu path): the built-in Graphics::Big5Font glyph is a fixed 16px wide,
+// so the cell must stay wide enough not to clip it. Menu text uses this.
 static const int kBig5Width = 14;
+// Hi-res advance (dialogue path): the 20px hi-res glyph box exactly fills the 20px display
+// advance (2 * kBig5WidthHi), so characters pack edge-to-edge — dense per line but still big
+// enough to read (validated in leisure_suit_2; player feedback: 字太大/太鬆/台詞被截斷).
+static const int kBig5WidthHi = 10;
 
-// Hi-res Big5 font (own format, bake_hires_font.py): 32px-wide, kHiH-row glyphs drawn
+// Hi-res Big5 font (own format, bake_hires_font.py): kHiW-px-wide, kHiH-row glyphs drawn
 // straight onto the 640x400 display buffer for sharp strokes under ZH_TWN upscaling.
+// kHiW <= kBig5WidthHi*2 (=20) so glyphs never bleed into the next cell; row stride is
+// ceil(kHiW/8) bytes, so kHiW need not be a multiple of 8.
 static const char *kChineseHiResFontFile = "qfg1_big5_hi.fnt";
-static const int kHiW = 24;   // 2x the 12px logical glyph; drawn centered in the 14px cell
-static const int kHiH = 22;
+static const int kHiW = 20;
+static const int kHiH = 20;
+
+// True when the current draw/measure should take the hi-res dialogue path (upscaled display,
+// not a menu). Width metrics and drawing must agree on this so wrapping matches rendering.
+bool GfxFontChinese::useHiRes() const {
+	return !_screen->menuTextActive() && _screen->getDisplayWidth() > _screen->getWidth();
+}
 
 GfxFontChinese::GfxFontChinese(ResourceManager *resMan, GfxScreen *screen, GuiResourceId resourceId)
 	: _screen(screen), _resourceId(resourceId), _big5(nullptr), _big5Height(14) {
@@ -56,8 +70,8 @@ GfxFontChinese::GfxFontChinese(ResourceManager *resMan, GfxScreen *screen, GuiRe
 	// Line-height metric for layout (getHeight). Capped below the native glyph height so lines
 	// pack tighter and boxes hold more text (issue #1: 對話後面被截斷). The hi-res glyph (kHiH)
 	// is the actual drawn height; low-res is only a rare fallback under ZH_TWN (always upscaled).
-	if (_big5Height > 13)
-		_big5Height = 13;
+	if (_big5Height > 12)
+		_big5Height = 12;
 
 	_hiW = kHiW;
 	_hiH = kHiH;
@@ -71,7 +85,7 @@ bool GfxFontChinese::loadHiResFont() {
 	Common::File f;
 	if (!f.open(kChineseHiResFontFile))
 		return false;
-	const uint bytesPerGlyph = _hiH * (_hiW / 8);
+	const uint bytesPerGlyph = _hiH * ((_hiW + 7) / 8);
 	while (!f.eos()) {
 		uint16 code = f.readUint16BE();
 		if (f.eos() || code == 0xFFFF)
@@ -107,8 +121,10 @@ bool GfxFontChinese::isDoubleByte(uint16 chr) {
 byte GfxFontChinese::getCharWidth(uint16 chr) {
 	// chr may arrive either as a bare lead byte (during width scans) or as a
 	// combined lead|(trail<<8) value (during drawing). Both mean a Big5 char.
+	// The advance must match the path draw() will take (same useHiRes() gate) so that
+	// line-wrapping (GetLongest) and rendering agree — else text overflows its box.
 	if (chr > 0xFF || isDoubleByte(chr))
-		return kBig5Width;
+		return useHiRes() ? kBig5WidthHi : kBig5Width;
 	return _asciiFont->getCharWidth(chr);
 }
 
@@ -133,7 +149,7 @@ void GfxFontChinese::draw(uint16 chr, int16 top, int16 left, byte color, bool gr
 	// Skipped for menu text (bar + dropdown): the hi-res path writes only to the display
 	// buffer, but menu highlight inverts the visual buffer + re-upscales, which would wipe
 	// hi-res glyphs to black-on-black. Low-res writes the visual buffer too, so it inverts.
-	if (!_screen->menuTextActive() && _screen->getDisplayWidth() > _screen->getWidth() && _hiIndex.contains(point)) {
+	if (useHiRes() && _hiIndex.contains(point)) {
 		drawHiRes(point, top, left, color);
 		return;
 	}
@@ -175,9 +191,10 @@ void GfxFontChinese::drawHiRes(uint16 point, int16 top, int16 left, byte color) 
 	if (it == _hiIndex.end())
 		return;
 	const byte *bmp = &_hiData[it->_value];
-	const int rowBytes = _hiW / 8;
-	// Centre the (possibly narrower) hi-res glyph within the 2x logical advance cell.
-	const int dispLeft = left * 2 + (2 * kBig5Width - _hiW) / 2;
+	const int rowBytes = (_hiW + 7) / 8;
+	// Centre the hi-res glyph within the 2x hi-res advance cell (24px glyph in a 24px cell
+	// => flush, no loose gap).
+	const int dispLeft = left * 2 + (2 * kBig5WidthHi - _hiW) / 2;
 	const int dispTop = top * 2;
 	const int dispW = _screen->getDisplayWidth();
 	const int dispH = _screen->getDisplayHeight();

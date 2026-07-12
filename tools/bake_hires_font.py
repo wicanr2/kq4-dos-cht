@@ -22,7 +22,7 @@ def main():
     ap.add_argument("--face", type=int, default=2)
     a = ap.parse_args()
     W, H = a.width, a.height
-    assert W % 8 == 0
+    # W 不必為 8 倍數（rowBytes 用 ceil）
 
     # 收集所有 tsv 中出現的 Big5 雙位元組字
     chars = set()
@@ -57,12 +57,13 @@ def main():
         d.text((ox, oy), ch, fill=255, font=font)
         px = img.load()
         rows = bytearray()
+        row_bytes = (W + 7) // 8  # ceil：W 不必為 8 的倍數
         for y in range(H):
-            for byte_i in range(W // 8):  # 4 bytes / 列
+            for byte_i in range(row_bytes):
                 bits = 0
                 for bit in range(8):
                     x = byte_i * 8 + bit
-                    bits = (bits << 1) | (1 if px[x, y] >= 128 else 0)
+                    bits = (bits << 1) | (1 if (x < W and px[x, y] >= 128) else 0)
                 rows.append(bits)
         glyphs.append((code, bytes(rows)))
 

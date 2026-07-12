@@ -60,6 +60,7 @@ private:
 	// display buffer so strokes stay sharp instead of blocky 2x-nearest. See drawHiRes().
 	bool loadHiResFont();
 	void drawHiRes(uint16 point, int16 top, int16 left, byte color);
+	bool useHiRes() const;
 
 	GfxScreen *_screen;
 	GuiResourceId _resourceId;
