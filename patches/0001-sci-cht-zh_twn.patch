@@ -153,6 +153,44 @@
  		else
  			_cachedFonts[fontId] = new GfxFontFromResource(_resMan, _screen, fontId);
  	}
+--- a/engines/sci/graphics/menu.cpp
++++ b/engines/sci/graphics/menu.cpp
+@@ -368,6 +368,9 @@
+ 	else
+ 		_ports->moveTo(_screen->getWidth() - 8, 1);
+ 
++	// CHT: draw menu titles via the low-res Chinese path so highlight-invert works (see
++	// GfxScreen::setMenuTextActive).
++	_screen->setMenuTextActive(true);
+ 	listIterator = _list.begin();
+ 	while (listIterator != listEnd) {
+ 		GuiMenuEntry *listEntry = *listIterator;
+@@ -384,6 +387,7 @@
+ 
+ 		listIterator++;
+ 	}
++	_screen->setMenuTextActive(false);
+ }
+ 
+ // This helper calculates all text widths for all menus (only)
+@@ -676,6 +680,9 @@
+ 	else
+ 		_menuRect.right -= 8;
+ 	topPos = _menuRect.top + 1;
++	// CHT: draw dropdown items via the low-res Chinese path so highlight-invert works
++	// (see GfxScreen::setMenuTextActive). Reset after the loop below.
++	_screen->setMenuTextActive(true);
+ 	listItemIterator = _itemList.begin();
+ 	while (listItemIterator != listItemEnd) {
+ 		listItemEntry = *listItemIterator;
+@@ -708,6 +715,7 @@
+ 		listItemIterator++;
+ 	}
+ 	_ports->textGreyedOutput(false);
++	_screen->setMenuTextActive(false);
+ 
+ 	// Draw the black line again
+ 	_paint16->fillRect(_ports->_menuLine, 1, 0);
 --- a/engines/sci/graphics/paint16.cpp
 +++ b/engines/sci/graphics/paint16.cpp
 @@ -19,6 +19,8 @@
@@ -341,6 +379,28 @@
  	byte getColorWhite() { return _colorWhite; }
  	byte getColorDefaultVectorData() { return _colorDefaultVectorData; }
  
+@@ -151,6 +152,13 @@
+ 	void setFontIsUpscaled(bool isUpscaled) { _fontIsUpscaled = isUpscaled; }
+ 	bool fontIsUpscaled() const { return _fontIsUpscaled; }
+ 
++	// CHT: while a menu bar/dropdown is being drawn, force Chinese glyphs down the low-res
++	// path so they land in the visual buffer and thus invert correctly on highlight. The
++	// hi-res path writes straight to the display buffer, which invertRect (visual only) +
++	// bitsShow (re-upscale) would wipe to a black-on-black (invisible) selection.
++	void setMenuTextActive(bool active) { _menuTextActive = active; }
++	bool menuTextActive() const { return _menuTextActive; }
++
+ 	void grabPalette(byte *buffer, uint start, uint num) const;
+ 	void setPalette(const byte *buffer, uint start, uint num, bool update = true);
+ 
+@@ -249,6 +257,7 @@
+ 	 * to the screen size (and we therefore should not upscale it ourselves).
+ 	 */
+ 	bool _fontIsUpscaled;
++	bool _menuTextActive = false;
+ 
+ 
+ 	// pixel related code, in header so that it can be inlined for performance
 --- a/engines/sci/graphics/text16.cpp
 +++ b/engines/sci/graphics/text16.cpp
 @@ -303,7 +303,21 @@

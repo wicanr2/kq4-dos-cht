@@ -10,6 +10,7 @@ FILES=(
   engines/sci/graphics/animate.cpp
   engines/sci/engine/kstring.cpp
   engines/sci/graphics/cache.cpp
+  engines/sci/graphics/menu.cpp
   engines/sci/graphics/paint16.cpp
   engines/sci/graphics/paint16.h
   engines/sci/graphics/ports.cpp

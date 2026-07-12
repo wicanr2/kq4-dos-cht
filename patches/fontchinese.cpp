@@ -130,7 +130,10 @@ void GfxFontChinese::draw(uint16 chr, int16 top, int16 left, byte color, bool gr
 
 	// Hi-res path: when ZH_TWN runs upscaled (640x400 display) and we have a hi-res glyph,
 	// draw sharp 32xN strokes directly onto the display instead of the blocky 2x low-res.
-	if (_screen->getDisplayWidth() > _screen->getWidth() && _hiIndex.contains(point)) {
+	// Skipped for menu text (bar + dropdown): the hi-res path writes only to the display
+	// buffer, but menu highlight inverts the visual buffer + re-upscales, which would wipe
+	// hi-res glyphs to black-on-black. Low-res writes the visual buffer too, so it inverts.
+	if (!_screen->menuTextActive() && _screen->getDisplayWidth() > _screen->getWidth() && _hiIndex.contains(point)) {
 		drawHiRes(point, top, left, color);
 		return;
 	}
