@@ -7,6 +7,7 @@ BASE="https://raw.githubusercontent.com/scummvm/scummvm/$COMMIT"
 SRC=scummvm-src
 PRIS=/tmp/kq4_pristine
 FILES=(
+  engines/sci/graphics/animate.cpp
   engines/sci/engine/kstring.cpp
   engines/sci/graphics/cache.cpp
   engines/sci/graphics/paint16.cpp

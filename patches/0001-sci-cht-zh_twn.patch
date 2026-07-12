@@ -1,3 +1,18 @@
+--- a/engines/sci/graphics/animate.cpp
++++ b/engines/sci/graphics/animate.cpp
+@@ -489,6 +489,12 @@
+ 	Common::Rect lsRect;
+ 	Common::Rect workerRect;
+ 
++	// CHT: the title screen's sparkle cels animate via kAnimate and draw over the visual
++	// plane every frame, covering the Chinese subtitle overlay. Re-assert the overlay onto
++	// the visual plane before the bitsShow loop below so it wins on screen (issue #1.3).
++	if (_paint16->_chtTitleActive)
++		_paint16->drawChtTitleOverlay();
++
+ 	for (it = _list.begin(); it != end; ++it) {
+ 		if (it->showBitsFlag || !(it->signal & (kSignalRemoveView | kSignalNoUpdate) ||
+ 										(!(it->signal & kSignalRemoveView) && (it->signal & kSignalNoUpdate) && oldPicNotValid))) {
 --- a/engines/sci/engine/kstring.cpp
 +++ b/engines/sci/engine/kstring.cpp
 @@ -207,6 +207,58 @@
@@ -255,16 +270,26 @@
  				bitsShow(celRect);
 --- a/engines/sci/graphics/paint16.h
 +++ b/engines/sci/graphics/paint16.h
-@@ -109,6 +109,15 @@
+@@ -45,6 +45,13 @@
+ 
+ 	void drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool addToFlag, GuiResourceId paletteId);
+ 	void drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo, uint16 leftPos, uint16 topPos, byte priority, uint16 paletteNo, uint16 scaleX = 128, uint16 scaleY = 128, uint16 scaleSignal = 0);
++
++	// CHT: Traditional Chinese title-screen subtitle overlay (kq4_title.ovl), blitted to the
++	// visual plane. Cached and re-asserted over the title's animated sparkle cels each frame
++	// (drawCelAndShow + GfxAnimate::updateScreen) so they don't cover it. Public so GfxAnimate
++	// can re-assert it before its own bitsShow. Active only while the title pic (96) is shown.
++	void drawChtTitleOverlay();
++	bool _chtTitleActive;
+ 	void drawCel(GuiResourceId viewId, int16 loopNo, int16 celNo, const Common::Rect &celRect, byte priority, uint16 paletteNo, uint16 scaleX = 128, uint16 scaleY = 128, uint16 scaleSignal = 0);
+ 	void drawCel(GfxView *view, int16 loopNo, int16 celNo, const Common::Rect &celRect, byte priority, uint16 paletteNo, uint16 scaleX = 128, uint16 scaleY = 128, uint16 scaleSignal = 0);
+ 	void drawHiresCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo, uint16 leftPos, uint16 topPos, byte priority, uint16 paletteNo, reg_t hiresHandle, bool storeDrawingInfo);
+@@ -109,6 +116,11 @@
  
  	HiresDrawData *_hiresDrawObjs;
  	bool _hiresPortraitWorkaroundFlag;
 +
-+	// CHT: Traditional Chinese title-screen subtitle overlay (kq4_title.ovl), blitted to the
-+	// visual plane. Cached and re-asserted over the title's animated sparkle cels each frame
-+	// (drawCelAndShow) so they don't cover it. Active only while the title pic (96) is shown.
-+	void drawChtTitleOverlay();
-+	bool _chtTitleActive;
++	// CHT: title overlay pixel cache + one-shot load state (see public drawChtTitleOverlay).
 +	bool _chtTitleLoaded;
 +	uint16 _chtTitleW, _chtTitleH, _chtTitleX, _chtTitleY;
 +	Common::Array<byte> _chtTitleData;
